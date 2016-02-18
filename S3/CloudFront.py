@@ -189,8 +189,8 @@ class DistributionConfig(object):
         # don't create a empty DefaultRootObject element as it would result in a MalformedXML error
         if str(self.info['DefaultRootObject']):
             appendXmlTextNode("DefaultRootObject", str(self.info['DefaultRootObject']), tree)
-        if self.info['DefaultRootObject']:
-            appendXmlTextNode("DefaultRootObject", str(self.info['DefaultRootObject']), tree)
+        if self.info['Compress'] is True:
+            appendXmlTextNode("Compress", str(self.info['Compress']).lower(), tree)
         if self.info['Logging']:
             logging_el = ET.Element("Logging")
             appendXmlTextNode("Bucket", getHostnameFromBucket(self.info['Logging'].bucket()), logging_el)
@@ -333,6 +333,7 @@ class CloudFront(object):
         dist_config.info['S3Origin']['DNSName'] = uri.host_name()
         dist_config.info['CallerReference'] = str(uri)
         dist_config.info['DefaultRootObject'] = default_root_object
+        dist_config.info['Compress'] = compress
         if comment == None:
             dist_config.info['Comment'] = uri.public_url()
         else:
@@ -342,8 +343,6 @@ class CloudFront(object):
                 dist_config.info['CNAME'].append(cname)
         if logging:
             dist_config.info['Logging'] = S3UriS3(logging)
-        if compress is True:
-            dist_config.info['Compress'] = True
         request_body = str(dist_config)
         debug("CreateDistribution(): request_body: %s" % request_body)
         response = self.send_request("CreateDist", body = request_body)
