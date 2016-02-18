@@ -189,6 +189,8 @@ class DistributionConfig(object):
         # don't create a empty DefaultRootObject element as it would result in a MalformedXML error
         if str(self.info['DefaultRootObject']):
             appendXmlTextNode("DefaultRootObject", str(self.info['DefaultRootObject']), tree)
+        if self.info['DefaultRootObject']:
+            appendXmlTextNode("DefaultRootObject", str(self.info['DefaultRootObject']), tree)
         if self.info['Logging']:
             logging_el = ET.Element("Logging")
             appendXmlTextNode("Bucket", getHostnameFromBucket(self.info['Logging'].bucket()), logging_el)
@@ -325,7 +327,7 @@ class CloudFront(object):
         ## TODO: handle Truncated
         return response
 
-    def CreateDistribution(self, uri, cnames_add = [], comment = None, logging = None, default_root_object = None):
+    def CreateDistribution(self, uri, cnames_add = [], comment = None, logging = None, default_root_object = None, compress = None):
         dist_config = DistributionConfig()
         dist_config.info['Enabled'] = True
         dist_config.info['S3Origin']['DNSName'] = uri.host_name()
@@ -340,6 +342,8 @@ class CloudFront(object):
                 dist_config.info['CNAME'].append(cname)
         if logging:
             dist_config.info['Logging'] = S3UriS3(logging)
+        if compress is True:
+            dist_config.info['Compress'] = True
         request_body = str(dist_config)
         debug("CreateDistribution(): request_body: %s" % request_body)
         response = self.send_request("CreateDist", body = request_body)
@@ -610,6 +614,7 @@ class Cmd(object):
         cf_enable = None
         cf_logging = None
         cf_default_root_object = None
+        cf_compress = None
 
         def option_list(self):
             return [opt for opt in dir(self) if opt.startswith("cf_")]
@@ -692,7 +697,8 @@ class Cmd(object):
             response = cf.CreateDistribution(uri, cnames_add = Cmd.options.cf_cnames_add,
                                              comment = Cmd.options.cf_comment,
                                              logging = Cmd.options.cf_logging,
-                                             default_root_object = Cmd.options.cf_default_root_object)
+                                             default_root_object = Cmd.options.cf_default_root_object,
+                                             compress=Cmd.options.cf_compress)
             d = response['distribution']
             dc = d.info['DistributionConfig']
             output("Distribution created:")
